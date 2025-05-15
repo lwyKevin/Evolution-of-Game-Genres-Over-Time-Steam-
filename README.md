@@ -10,6 +10,12 @@ This shift is huge, isn’t it? Ten to twenty years ago, AAA dominated the marke
 
 But why has the genre shifted?
 
+Or 
+
+**Why have game genres and themes changed over the past 20 years?**
+
+**Are there emerging genres or themes that could be popular in the upcoming decade?**
+
 That's what we want to find out.
 
 We will look at data from Steam, which is one of the largest digital game distribution platforms in the world.
@@ -26,18 +32,17 @@ SteamSpy, on the other hand, offers more insights such as median player time, re
 
 This project is last updated on May 10th 2025, the May 15th is the date I upload this to github not the date of completion.
 
+Answer to the questions:
+
+Q1: Why have game genres and themes changed over the past 20 years?
+
+A1: Expensive game engines free to public, everyone can be game devs + pour the heart, passionate -> quantity + quality 
+The "pour their heart" part can be seen in [steam's overwhelmingly positive review](https://store.steampowered.com/curator/41140195-Overwhelmingly-Positive-User-Reviews/), 2/3 are indie games, showing they got quality as well
 
 
+Q2: Are there emerging genres or themes that could be popular in the upcoming decade?
 
-
-
-
-
-
-
-
-
-
+A2: Indie genre steady and significant release, Early Access genre had grown notably in recent years despite being small increases.
 
 
 
