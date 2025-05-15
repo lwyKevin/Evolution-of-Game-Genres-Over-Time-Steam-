@@ -37,6 +37,7 @@ Answer to the questions:
 Q1: Why have game genres and themes changed over the past 20 years?
 
 A1: Expensive game engines free to public, everyone can be game devs + pour the heart, passionate -> quantity + quality 
+
 The "pour their heart" part can be seen in [steam's overwhelmingly positive review](https://store.steampowered.com/curator/41140195-Overwhelmingly-Positive-User-Reviews/), 2/3 are indie games, showing they got quality as well
 
 
@@ -47,8 +48,11 @@ A2: Indie genre steady and significant release, Early Access genre had grown not
 
 Reference:
 Steam. (n.d.). Overwhelmingly positive user reviews. https://store.steampowered.com/curator/41140195-Overwhelmingly-Positive-User-Reviews/
+
 Sergey Galyonkin. (n.d.) Steamspy. https://steamspy.com/
+
 IGDB. (n.d.). Best Games. https://www.igdb.com/top-100/games
+
 Unity. (2009). Unity 2.6 released and now free! https://unity.com/news/unity-2-6-released-and-now-free
 
 
