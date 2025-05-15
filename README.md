@@ -45,4 +45,10 @@ Q2: Are there emerging genres or themes that could be popular in the upcoming de
 A2: Indie genre steady and significant release, Early Access genre had grown notably in recent years despite being small increases.
 
 
+Reference:
+Steam. (n.d.). Overwhelmingly positive user reviews. https://store.steampowered.com/curator/41140195-Overwhelmingly-Positive-User-Reviews/
+Sergey Galyonkin. (n.d.) Steamspy. https://steamspy.com/
+IGDB. (n.d.). Best Games. https://www.igdb.com/top-100/games
+Unity. (2009). Unity 2.6 released and now free! https://unity.com/news/unity-2-6-released-and-now-free
+
 
