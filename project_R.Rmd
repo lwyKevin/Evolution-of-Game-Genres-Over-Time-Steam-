@@ -1,0 +1,618 @@
+---
+title: "2501 project"
+output: html_document
+date: "2025-05-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load library
+
+```{r}
+library(tidyverse)   # For data manipulation and visualization
+library(lubridate)   # For handling dates
+library(readr)       # For reading CSV files
+library(rvest)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(scales)  # for percent formatting if needed
+```
+
+## Load Steam Data
+
+Project
+├── project_R.Rmd <- this file
+└── SteamSpyData
+    ├── Action.csv
+    ├── Adventure.csv
+    └── ...
+
+The data are extracted from https://steamspy.com/ on May 7th, 2025
+```{r}
+action_data <- read.csv("SteamSpyData/Action.csv")
+
+adventure_data <- read.csv("SteamSpyData/Adventure.csv")
+
+EarlyAccess_data <- read.csv("SteamSpyData/EarlyAccess.csv")
+
+ExEarlyAccess_data <- read.csv("SteamSpyData/ExEarlyAccess.csv")
+
+Free_data <- read.csv("SteamSpyData/Free.csv")
+
+Indie_data <- read.csv("SteamSpyData/Indie.csv")
+
+MMO_data <- read.csv("SteamSpyData/MMO.csv")
+
+RPG_data <- read.csv("SteamSpyData/RPG.csv")
+
+Simulation_data <- read.csv("SteamSpyData/Simulation.csv")
+
+Sports_data <- read.csv("SteamSpyData/Sports.csv")
+
+Strategy_data <- read.csv("SteamSpyData/Strategy.csv")
+
+```
+
+## See the data
+
+```{r}
+head(action_data)
+```
+
+X or # means the ranking of the game in that genre, we will merge them later so we will drop them.
+
+Game means game name
+
+Release.date is the release date of each game
+
+Price is price of the game
+
+Score rank(Userscore / Metascore) is the user score and metascore which is rating
+
+Owners is the how many people own this game, as estimated
+
+Playtime (Median) is the median playtime, first one eg 21:38 means 21 hour 38 min median total playtime, the (14:25) means typical platime oever 2 weeks is 14 hours 25 mins median.
+
+Developer (s) is the company/person/team that made the game
+
+Publisher (s) is the company/team that publish or distribute the game
+
+```{r}
+head(ExEarlyAccess_data)
+```
+
+HOWEVER, one of the csv, ExEarlyAccess has an extra column of Players which represent how many % of the owners plaed the game in recent period.
+
+As ExEarlyAccess is the ONLY csv with this column, we will choose to remove it
+
+```{r}
+# Remove "Players" column from ExEarlyAccess_data only
+ExEarlyAccess_data <- ExEarlyAccess_data %>% select(-Players)
+```
+
+
+```{r}
+# Function to drop the first column (unique ID)
+drop_id <- function(df) {
+  df[, -1]
+}
+
+# Apply the function to each data frame
+action_data <- drop_id(action_data)
+adventure_data <- drop_id(adventure_data)
+EarlyAccess_data <- drop_id(EarlyAccess_data)
+ExEarlyAccess_data <- drop_id(ExEarlyAccess_data)
+Free_data <- drop_id(Free_data)
+Indie_data <- drop_id(Indie_data)
+MMO_data <- drop_id(MMO_data)
+RPG_data <- drop_id(RPG_data)
+Simulation_data <- drop_id(Simulation_data)
+Sports_data <- drop_id(Sports_data)
+Strategy_data <- drop_id(Strategy_data)
+```
+
+
+```{r}
+# Add Genre column to each dataset
+action_data$Genre <- "Action"
+adventure_data$Genre <- "Adventure"
+EarlyAccess_data$Genre <- "EarlyAccess"
+ExEarlyAccess_data$Genre <- "ExEarlyAccess"
+Free_data$Genre <- "Free"
+Indie_data$Genre <- "Indie"
+MMO_data$Genre <- "MMO"
+RPG_data$Genre <- "RPG"
+Simulation_data$Genre <- "Simulation"
+Sports_data$Genre <- "Sports"
+Strategy_data$Genre <- "Strategy"
+
+```
+
+```{r}
+head(action_data)
+dim(action_data)
+```
+
+```{r}
+combined_data <- bind_rows(
+  action_data,
+  adventure_data,
+  EarlyAccess_data,
+  ExEarlyAccess_data,
+  Free_data,
+  Indie_data,
+  MMO_data,
+  RPG_data,
+  Simulation_data,
+  Sports_data,
+  Strategy_data
+)
+
+```
+
+
+```{r}
+# Remove duplicate rows if some games appear in multiple genres
+combined_data <- unique(combined_data)
+
+# Convert Release.date to Date type
+combined_data$Release_date <- mdy(combined_data$Release.date)
+
+# If there are NAs due to format issues, fallback to parse_date_time:
+if (any(is.na(combined_data$Release_date))) {
+  combined_data$Release_date <- parse_date_time(combined_data$Release.date, orders = c("mdy", "dmy", "ymd"))
+}
+
+# Extract Year
+combined_data$Year <- year(combined_data$Release_date)
+
+# Filter out rows with missing Year + is >= 2000, and specifically not 2030 as there seems to be data in 2030 for some reason
+combined_data <- combined_data %>% filter(!is.na(Year) & Year >= 2000 & Year != 2030)
+
+# Write combined data to CSV
+write.csv(combined_data, "SteamSpyData/Combined_SteamSpy.csv", row.names = FALSE)
+
+# see the combined data
+head(combined_data)
+```
+
+
+```{r}
+dim(combined_data)
+```
+
+
+```{r}
+# Count number of games released per year per Genre
+release_counts <- combined_data |>
+  group_by(Year, Genre) |>
+  summarise(Count = n(), .groups = "drop")
+
+# Plot stacked bar chart
+ggplot(release_counts, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Games Released by Genre Over Time",
+       x = "Year",
+       y = "Number of Games Released",
+       fill = "Genre") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+2000 to 2010, number of games per year was low
+
+2010 start increasing
+
+2015 onwards, growth accelerates sharply
+
+
+```{r}
+
+# Filter data for years 2000 to 2010 inclusive
+data_2000_2010 <- combined_data %>%
+  filter(Year >= 2000 & Year <= 2010)
+
+# Count number of games released per year and genre in this period
+release_counts_2000_2010 <- data_2000_2010 %>%
+  group_by(Year, Genre) %>%
+  summarise(Count = n(), .groups = "drop")
+
+# Plot the stacked bar chart for 2000-2010
+ggplot(release_counts_2000_2010, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Games Released by Genre (2000-2010)",
+       x = "Year",
+       y = "Number of Games Released",
+       fill = "Genre") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+
+```{r}
+release_counts_pct <- release_counts_2000_2010 %>%
+  group_by(Year) %>%
+  mutate(Percent = Count / sum(Count) * 100) %>%
+  ungroup()
+
+
+
+ggplot(release_counts_pct, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(aes(label = paste0(round(Percent, 1), "%")),
+            position = position_fill(vjust = 0.5), size = 2.5, color = "white") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "Proportion of Games Released by Genre (2000-2010)",
+    x = "Year",
+    y = "Percentage of Games Released",
+    fill = "Genre"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Action and Strategy genres make up for a large share of releases every year, they were the trend from 2000 to 2010.
+
+Indie games slowly rising in proportion, and surpass strategy in 2008 and above.
+
+```{r}
+
+# Filter data for 2010 and later
+data_2010_current <- combined_data %>%
+  filter(Year >= 2010)
+
+# Count releases per year and genre
+release_counts_2010_current <- data_2010_current %>%
+  group_by(Year, Genre) %>%
+  summarise(Count = n(), .groups = "drop")
+
+# Plot stacked bar chart (absolute counts)
+ggplot(release_counts_2010_current, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Number of Games Released by Genre (2010 - Current)",
+    x = "Year",
+    y = "Number of Games Released",
+    fill = "Genre"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+
+release_counts_2010_plus <- combined_data %>%
+  filter(Year >= 2010) %>%
+  group_by(Year, Genre) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Year) %>%
+  mutate(Percent = Count / sum(Count) * 100) %>%
+  ungroup()
+
+ggplot(release_counts_2010_plus, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity", position = "fill", width = 0.7) +  # narrower bars for spacing
+  geom_text(aes(label = ifelse(Percent > 3, paste0(round(Percent, 1), "%"), "")),
+            position = position_fill(vjust = 0.5), size = 2.5, color = "black") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "Proportion of Games Released by Genre (2010 - Current)",
+    x = "Year",
+    y = "Percentage of Games Released",
+    fill = "Genre"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Indie game increased in popularity and even surpass the Action genre in 2011 onwards, stragtegy genres appeared to have a less proportion.
+
+Early and ex early access games showed an increase in release from 2014, this could indicate players believe early acces game releases are important
+
+RPG and simulation genres mostly have no big changes throughout the entire 20 years.
+
+
+
+So, why did indie rise ?
+
+We will talk about 2 important game making tools: unreal engine and unity.
+
+Unity was released for free in 2009.  Before that game engines were costly like a couple hundreds or thousands of dollars, which not everyone except AAA studios are willing to spend to develop games.  Then unity released for free which is an Indie tipping point.
+
+Unreal engine had been out for quite a while as well, but in 2014, epic games released unreal engine 4 which is the first version of unreal engine to be free to download.  This is also a tipping point.
+
+Both tools exist and surged the indie game development process, and we will see if it is highly correlated with the increase of indie games.
+
+```{r}
+
+combined_data$unity_free <- ifelse(combined_data$Year >= 2009, 1, 0)
+combined_data$UE_free <- ifelse(combined_data$Year >= 2014, 1, 0)
+
+# View the updated dataframe
+head(combined_data)
+```
+
+
+
+```{r}
+
+# Calculate yearly indie game proportions
+yearly_data <- combined_data %>%
+  group_by(Year) %>%
+  summarise(
+    indie_count = sum(Genre == "Indie", na.rm = TRUE),
+    total_games = n(),
+    indie_proportion = indie_count / total_games,
+    unity_free = first(unity_free),  # Already 0/1 by year
+    UE_free = first(UE_free)
+  )
+
+# View the processed data
+yearly_data
+
+```
+
+
+
+```{r}
+
+ggplot(yearly_data, aes(x = Year)) +
+  geom_line(aes(y = indie_proportion * 100), color = "red", linewidth = 1.5) +
+  geom_vline(xintercept = 2009, linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = 2014, linetype = "dashed", color = "green") +
+  annotate("text", x = 2009, y = max(yearly_data$indie_proportion * 100), 
+           label = "Unity Free (2009)", hjust = -0.1, color = "blue") +
+  annotate("text", x = 2014, y = max(yearly_data$indie_proportion * 100), 
+           label = "Unreal Free (2014)", hjust = -0.1, color = "green") +
+  labs(title = "Indie Game Proportion vs. Engine Availability",
+       y = "Indie Games (% of Total Releases)",
+       x = "Year") +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+# Calculate correlations between indie proportion and engine availability
+
+cat("Unity Free Correlation:", cor(yearly_data$indie_proportion, yearly_data$unity_free), "\n")
+
+
+cat("UE Free Correlation:",cor(yearly_data$indie_proportion, yearly_data$UE_free))
+```
+
+
+```{r}
+ggplot(yearly_data, aes(x = Year)) +
+  geom_line(aes(y = indie_count), color = "red", linewidth = 1.5, alpha = 0.5) +
+  geom_point(aes(y = indie_count), color = "red", size = 3) +  # Adds points for each year
+  geom_vline(xintercept = 2009, linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = 2014, linetype = "dashed", color = "green") +
+  annotate("text", x = 2009, y = max(yearly_data$indie_count), 
+           label = "Unity Free (2009)", hjust = -0.1, color = "blue") +
+  annotate("text", x = 2014, y = max(yearly_data$indie_count), 
+           label = "Unreal Free (2014)", hjust = -0.1, color = "green") +
+  labs(title = "Indie Game Releases vs. Engine Availability",
+       y = "Number of Indie Game Releases",
+       x = "Year") +
+  theme_minimal()
+```
+
+```{r}
+# Correlation between indie count and Unity being free
+cat("Unity Free Correlation (Count):", cor(yearly_data$indie_count, yearly_data$unity_free), "\n")
+
+# Correlation between indie count and Unreal being free
+cat("UE Free Correlation (Count):", cor(yearly_data$indie_count, yearly_data$UE_free), "\n")
+```
+
+
+Q1: Why have game genres and themes changed over the past 20 years?
+A1: Expensive game engines free to public, everyone can be game devs + pour the heart, passionate -> quantity + quality 
+The "pour their heart" part can be seen in steam's overwhelmingly positive review, 2/3 are indie games, showing they got quality as well
+
+
+Q2: Are there emerging genres or themes that could be popular in the upcoming decade?
+A2: Indie genre steady and significant release, Early Access genre had grown notably in recent years despite being small increases.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Unused content
+
+
+
+
+```{r}
+ggplot(indie_per_year, aes(x = Year, y = indie_count)) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  # Add vertical lines for engine availability changes
+  geom_vline(xintercept = 2009, linetype = "dashed", color = "blue", linewidth = 0.8) +
+  geom_vline(xintercept = 2014, linetype = "dashed", color = "green", linewidth = 0.8) +
+  # Add annotations
+  annotate("text", x = 2009, y = max(indie_per_year$indie_count), 
+           label = "Unity Free (2009)", hjust = -0.1, color = "blue", size = 3) +
+  annotate("text", x = 2014, y = max(indie_per_year$indie_count), 
+           label = "Unreal Free (2014)", hjust = -0.1, color = "green", size = 3) +
+  labs(
+    title = "Number of Indie Games Released with Engine Availability Markers",
+    subtitle = "Blue dashed line = Unity became free (2009)\nGreen dashed line = Unreal Engine became free (2014)",
+    x = "Year",
+    y = "Number of Indie Games"
+  ) +
+  theme_minimal()
+```
+
+
+
+```{r}
+# Prepare data: counts + percentages per year+genre
+release_counts_2010_current <- combined_data %>%
+  filter(Year >= 2010) %>%
+  group_by(Year, Genre) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Year) %>%
+  mutate(Percent = Count / sum(Count) * 100) %>%
+  ungroup()
+
+# Plot
+ggplot(release_counts_2010_current, aes(x = factor(Year), y = Count, fill = Genre)) +
+  geom_bar(stat = "identity", width = 0.7) +   # narrower bars = spacing between bars
+  geom_text(aes(label = ifelse(Percent > 3, paste0(round(Percent, 1), "%"), "")),  # label only if >3%
+            position = position_stack(vjust = 0.5), size = 3, color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +  # small top padding
+  labs(
+    title = "Number of Games Released by Genre (2010 - Current)",
+    x = "Year",
+    y = "Number of Games Released",
+    fill = "Genre"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank()  # optional: remove vertical grid lines for clarity
+  )
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
